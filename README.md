@@ -2,7 +2,7 @@
 
 Proyecto Final TalentoTech.
 Este proyecto es un e-commerce fullstack que simula una tienda de productos para mascotas.
-
+---------------------------------------------------------------------------
 🛠️ Tecnologías Utilizadas
 
 Backend: Java 21 + Spring Boot 3.
@@ -10,25 +10,24 @@ Backend: Java 21 + Spring Boot 3.
 Base de Datos: H2 Database
 
 Frontend: HTML5 + React.js (vía CDN) + TailwindCSS.
+---------------------------------------------------------------------------
 
 🚀 Cómo Ejecutar el Proyecto
 
-Clonar el repositorio:s
+- Clonar el repositorio:s
 
 git clone [https://github.com/HoffmannPedro/proyectoFinal-TalTech.git]
 
-
-Ejecutar la aplicación:
+- Ejecutar la aplicación:
 
 Podes importar el proyecto en Eclipse / IntelliJ IDEA como proyecto Maven y ejecutar la clase principal:
 src/main/java/com/alphapets/AlphapetsApplication.java
 
-O desde la terminal en la raíz del proyecto:
+- O desde la terminal en la raíz del proyecto:
 
 mvw spring-boot:run
 
-
-Acceder a la Web:
+- Acceder a la Web:
 
 Una vez iniciada la consola de Spring, abrir el navegador en:
 👉 http://localhost:8080
@@ -36,7 +35,7 @@ Una vez iniciada la consola de Spring, abrir el navegador en:
 🧪 Pruebas y Endpoints
 
 El sistema cuenta con un DataLoader que carga productos de ejemplo al iniciar.
-
+---------------------------------------------------------------------------
 Credenciales Base de Datos (H2 Console)
 
 Para verificar la persistencia de datos:
@@ -49,10 +48,10 @@ User: admin
 
 Password: (dejar vacío)
 
-
-
+---------------------------------------------------------------------------
 📦 1. GESTIÓN DE PRODUCTOS
-
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
 Base URL: /api/productos
 
 A. Listar todos los productos
@@ -63,6 +62,7 @@ Endpoint: /api/productos
 
 Descripción: Recupera el catálogo completo de productos.
 
+---------------------------------------------------------------------------
 
 B. Obtener producto por ID
 
@@ -72,6 +72,7 @@ Endpoint: /api/productos/{id}
 
 Descripción: Busca un producto específico por su ID.
 
+---------------------------------------------------------------------------
 
 C. Buscar productos por nombre
 
@@ -81,6 +82,7 @@ Endpoint: /api/productos/buscar?q={nombre}
 
 Descripción: Busca productos que contengan el texto en su nombre.
 
+---------------------------------------------------------------------------
 
 D. Eliminar producto
 
@@ -90,7 +92,7 @@ Endpoint: /api/productos/{id}
 
 Descripción: Elimina un producto del sistema.
 
-
+---------------------------------------------------------------------------
 
 ➤ Crear Producto (Polimorfismo)
 
@@ -123,9 +125,10 @@ Ejemplo JSON (Accesorio):
   "material": "Nylon"
 }
 
-
+---------------------------------------------------------------------------
 🛒 2. GESTIÓN DE PEDIDOS
-
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
 Base URL: /api/pedidos
 
 A. Ver historial de pedidos
@@ -136,6 +139,7 @@ Endpoint: /api/pedidos
 
 Descripción: Lista todos los pedidos realizados.
 
+---------------------------------------------------------------------------
 
 B. Realizar un pedido (Compra)
 
