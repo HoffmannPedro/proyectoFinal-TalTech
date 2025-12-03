@@ -48,3 +48,114 @@ JDBC URL: jdbc:h2:mem:alphapets_db
 User: admin
 
 Password: (dejar vacío)
+
+
+
+📦 1. GESTIÓN DE PRODUCTOS
+
+Base URL: /api/productos
+
+A. Listar todos los productos
+
+Método: GET
+
+Endpoint: /api/productos
+
+Descripción: Recupera el catálogo completo de productos.
+
+
+B. Obtener producto por ID
+
+Método: GET
+
+Endpoint: /api/productos/{id}
+
+Descripción: Busca un producto específico por su ID.
+
+
+C. Buscar productos por nombre
+
+Método: GET
+
+Endpoint: /api/productos/buscar?q={nombre}
+
+Descripción: Busca productos que contengan el texto en su nombre.
+
+
+D. Eliminar producto
+
+Método: DELETE
+
+Endpoint: /api/productos/{id}
+
+Descripción: Elimina un producto del sistema.
+
+
+
+➤ Crear Producto (Polimorfismo)
+
+El sistema detecta automáticamente si es Alimento o Accesorio según el campo "tipo".
+
+Ejemplo JSON (Alimento):
+
+{
+  "tipo": "ALIMENTO",
+  "nombre": "Royal Canin Adulto",
+  "descripcion": "Alimento balanceado premium, 15kg.",
+  "precio": 45000.0,
+  "stock": 20,
+  "imagenUrl": "[https://ejemplo.com/imagen.jpg](https://ejemplo.com/imagen.jpg)",
+  "pesoKg": 15.0,
+  "esHipoalergenico": false
+}
+
+
+Ejemplo JSON (Accesorio):
+
+{
+  "tipo": "ACCESORIO",
+  "nombre": "Correa Extensible",
+  "descripcion": "Correa de paseo resistente.",
+  "precio": 8500.0,
+  "stock": 50,
+  "imagenUrl": "[https://ejemplo.com/correa.jpg](https://ejemplo.com/correa.jpg)",
+  "talla": "M",
+  "material": "Nylon"
+}
+
+
+🛒 2. GESTIÓN DE PEDIDOS
+
+Base URL: /api/pedidos
+
+A. Ver historial de pedidos
+
+Método: GET
+
+Endpoint: /api/pedidos
+
+Descripción: Lista todos los pedidos realizados.
+
+
+B. Realizar un pedido (Compra)
+
+Método: POST
+
+Endpoint: /api/pedidos
+
+Descripción: Crea una orden y descuenta stock.
+
+Ejemplo JSON (Compra):
+
+{
+  "lineas": [
+    {
+      "productoId": 1,
+      "cantidad": 2
+    },
+    {
+      "productoId": 2,
+      "cantidad": 1
+    }
+  ]
+}
