@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlphaPets | Tactical PetShop</title>
+
+    <!-- Librerías vía CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            background-color: #000;
+            color: #e4e4e7;
+        }
+
+        /* Scrollbar oscura para Chrome/Safari/Edge */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #000;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #10b981;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Configuración de entorno
+        const API_URL = "http://localhost:8080";
+
+        function App() {
+            const [view, setView] = useState('products');
+            const [products, setProducts] = useState([]);
+            const [cart, setCart] = useState([]);
+            const [orders, setOrders] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            const [newProduct, setNewProduct] = useState({
+                nombre: '',
+                descripcion: '',
+                precio: '',
+                stock: '',
+                imagenUrl: '',
+                tipo: 'ALIMENTO'
+            });
+
+            // 1. CARGA INICIAL
+            useEffect(() => {
+                fetchProducts();
+            }, []);
+
+            const fetchProducts = async () => {
+                try {
+                    const response = await fetch(`${API_URL}/api/productos`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        setProducts(data);
+                    } else {
+                        console.error("Error al obtener productos:", response.status);
+                    }
+                } catch (error) {
+                    console.error("Fallo de conexión", error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const addToCart = (product) => {
+                const existing = cart.find(p => p.id === product.id);
+                // Validación local de stock
+                if (existing && existing.quantity >= product.stock) {
+                    alert("⚠️ Stock insuficiente.");
+                    return;
+                }
+                if (existing) {
+                    setCart(cart.map(p => p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p));
+                } else {
+                    setCart([...cart, { ...product, quantity: 1 }]);
+                }
+            };
+
+            const removeFromCart = (id) => setCart(cart.filter(p => p.id !== id));
+
+            const total = cart.reduce((acc, p) => acc + (p.precio * p.quantity), 0);
+
+            // 2. CREAR PEDIDO
+            const handleCheckout = async () => {
+                if (cart.length === 0) return;
+
+                // Mapeo para coincidir con LineaPedido del backend
+                const orderPayload = {
+                    lineas: cart.map(item => ({
+                        productoId: item.id,
+                        nombreProducto: item.nombre,
+                        precioUnitario: item.precio,
+                        cantidad: item.quantity
+                    }))
+                };
+
+                try {
+                    const response = await fetch(`${API_URL}/api/pedidos`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(orderPayload)
+                    });
+
+                    if (response.ok) {
+                        const newOrder = await response.json();
+                        alert(`✅ Pedido #${newOrder.id} confirmado!`);
+                        setCart([]);
+                        fetchProducts(); // Actualizar stock visual
+                        setView('orders');
+                    } else {
+                        const errorMsg = await response.text();
+                        alert(`❌ Error: ${errorMsg}`);
+                    }
+                } catch (error) {
+                    alert("Error de conexión con el servidor.");
+                    console.error(error);
+                }
+            };
+
+            const handleInputChange = (e) => {
+                const { name, value } = e.target;
+                setNewProduct({ ...newProduct, [name]: value });
+            };
+
+            const handleCreateProduct = async (e) => {
+                e.preventDefault();
+                if (!newProduct.nombre || !newProduct.precio) {
+                    alert("Completa nombre y precio");
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_URL}/api/productos`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newProduct)
+                    });
+
+                    if (response.ok) {
+                        alert("✅ Producto creado!");
+                        setNewProduct({ nombre: '', descripcion: '', precio: '', stock: '', imagenUrl: '', tipo: 'ALIMENTO' });
+                        fetchProducts();
+                        setView('products');
+                    } else {
+                        alert("❌ Error al crear. Revisa los datos.");
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("Error de conexión.");
+                }
+            };
+
+            // Handler para imágenes rotas
+            const handleImageError = (e) => {
+                e.target.src = "https://placehold.co/400x300/18181b/10b981?text=ALPHA+PETS";
+            };
+
+            // --- VISTAS ---
+            const ProductList = () => (
+                <div className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {products.map(p => (
+                        <div key={p.id} className="bg-zinc-900 border border-zinc-800 flex flex-col group hover:border-emerald-500/50 transition-colors">
+                            <div className="h-48 bg-zinc-800 overflow-hidden relative">
+                                <img
+                                    src={p.imagenUrl || "broken"}
+                                    alt={p.nombre}
+                                    onError={handleImageError}
+                                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                                />
+                                <span className={`absolute top-2 right-2 text-black text-xs px-2 py-1 font-bold ${p.stock < 5 ? 'bg-amber-500' : 'bg-white'}`}>
+                                    {p.stock === 0 ? 'AGOTADO' : `STOCK: ${p.stock}`}
+                                </span>
+                            </div>
+                            <div className="p-4 flex flex-col flex-1">
+                                <h3 className="text-lg font-bold text-white mb-1">{p.nombre}</h3>
+                                <p className="text-zinc-400 text-sm mb-4 line-clamp-2">{p.descripcion}</p>
+                                <div className="mt-auto flex justify-between items-center pt-4 border-t border-zinc-800">
+                                    <span className="text-emerald-500 font-bold text-lg">${p.precio}</span>
+                                    <button
+                                        onClick={() => addToCart(p)}
+                                        disabled={p.stock <= 0}
+                                        className={`px-3 py-1 font-bold text-xs uppercase tracking-wider ${p.stock > 0 ? 'bg-white text-black hover:bg-emerald-400' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'}`}
+                                    >
+                                        {p.stock > 0 ? 'Agregar' : 'Sin Stock'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+
+            const CartList = () => (
+                <div className="p-8 max-w-4xl mx-auto">
+                    <h2 className="text-2xl font-bold mb-6 text-white border-b border-zinc-800 pb-2">Carrito</h2>
+                    {cart.length === 0 ? <div className="text-center py-10 text-zinc-500">Tu carrito está vacío</div> : (
+                        <div className="bg-zinc-900 border border-zinc-800 p-6">
+                            {cart.map(item => (
+                                <div key={item.id} className="flex justify-between items-center mb-4 border-b border-zinc-800 pb-4 last:border-0">
+                                    <div>
+                                        <h4 className="font-bold text-white">{item.nombre}</h4>
+                                        <p className="text-sm text-emerald-500">${item.precio} x {item.quantity}</p>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <span className="font-bold text-white">${item.precio * item.quantity}</span>
+                                        <button onClick={() => removeFromCart(item.id)} className="text-red-500 text-xs hover:text-red-400">ELIMINAR</button>
+                                    </div>
+                                </div>
+                            ))}
+                            <div className="mt-6 pt-6 border-t border-zinc-700 flex flex-col md:flex-row justify-between items-center gap-4">
+                                <span className="text-xl font-bold text-white">TOTAL: <span className="text-emerald-500">${total}</span></span>
+                                <button onClick={handleCheckout} className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 font-bold uppercase tracking-widest transition-colors">
+                                    Confirmar Orden
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+
+            const CreateProductForm = () => (
+                <div className="p-4 md:p-8 max-w-2xl mx-auto">
+                    <h2 className="text-2xl font-bold mb-6 text-white border-b border-zinc-800 pb-2">Nuevo Producto</h2>
+                    <form onSubmit={handleCreateProduct} className="bg-zinc-900 border border-zinc-800 p-6 space-y-4">
+                        <div>
+                            <label className="block text-zinc-400 text-xs font-bold uppercase mb-1">Nombre</label>
+                            <input type="text" name="nombre" value={newProduct.nombre} onChange={handleInputChange} className="w-full bg-zinc-950 border border-zinc-800 text-white p-2" required />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-zinc-400 text-xs font-bold uppercase mb-1">Precio</label>
+                                <input type="number" name="precio" value={newProduct.precio} onChange={handleInputChange} className="w-full bg-zinc-950 border border-zinc-800 text-white p-2" step="0.01" required />
+                            </div>
+                            <div>
+                                <label className="block text-zinc-400 text-xs font-bold uppercase mb-1">Stock</label>
+                                <input type="number" name="stock" value={newProduct.stock} onChange={handleInputChange} className="w-full bg-zinc-950 border border-zinc-800 text-white p-2" required />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-zinc-400 text-xs font-bold uppercase mb-1">Categoría</label>
+                            <select name="tipo" value={newProduct.tipo} onChange={handleInputChange} className="w-full bg-zinc-950 border border-zinc-800 text-white p-2">
+                                <option value="ALIMENTO">Alimento</option>
+                                <option value="ACCESORIO">Accesorio</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-zinc-400 text-xs font-bold uppercase mb-1">Descripción</label>
+                            <textarea name="descripcion" value={newProduct.descripcion} onChange={handleInputChange} className="w-full bg-zinc-950 border border-zinc-800 text-white p-2" rows="2"></textarea>
+                        </div>
+                        <div>
+                            <label className="block text-zinc-400 text-xs font-bold uppercase mb-1">URL Imagen</label>
+                            <input type="text" name="imagenUrl" value={newProduct.imagenUrl} onChange={handleInputChange} className="w-full bg-zinc-950 border border-zinc-800 text-white p-2" />
+                        </div>
+                        <div className="pt-4 flex gap-4">
+                            <button type="button" onClick={() => setView('products')} className="flex-1 bg-zinc-800 text-white py-2 font-bold uppercase">Cancelar</button>
+                            <button type="submit" className="flex-1 bg-emerald-600 text-white py-2 font-bold uppercase">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            );
+
+            // App Structure
+            return (
+                <div className="min-h-screen bg-black text-zinc-300 font-sans pb-10">
+                    <nav className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md p-4 sticky top-0 z-50">
+                        <div className="max-w-7xl mx-auto flex justify-between items-center">
+                            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('products')}>
+                                <i data-lucide="shield" className="text-emerald-500"></i>
+                                <h1 className="text-xl font-black tracking-tighter text-white">
+                                    ALPHA<span className="text-emerald-500">PETS</span>
+                                </h1>
+                            </div>
+                            <div className="flex gap-4 md:gap-8 items-center">
+                                <button onClick={() => setView('create')} className="bg-emerald-600 text-white px-4 py-2 text-sm font-bold uppercase ml-4">
+                                    + Nuevo Producto
+                                </button>
+                                <button onClick={() => setView('products')} className={`text-xs md:text-sm font-bold tracking-widest hover:text-white ${view === 'products' ? 'text-emerald-500' : 'text-zinc-500'}`}>CATÁLOGO</button>
+                                <button onClick={() => setView('cart')} className={`text-xs md:text-sm font-bold tracking-widest hover:text-white flex gap-2 ${view === 'cart' ? 'text-emerald-500' : 'text-zinc-500'}`}>
+                                    CARRITO {cart.length > 0 && <span className="bg-emerald-600 text-white px-1.5 rounded text-[10px] flex items-center">{cart.length}</span>}
+                                </button>
+                                <button onClick={() => setView('orders')} className={`text-xs md:text-sm font-bold tracking-widest hover:text-white ${view === 'orders' ? 'text-emerald-500' : 'text-zinc-500'}`}>PEDIDOS</button>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main className="max-w-7xl mx-auto mt-4">
+                        {loading ? (
+                            <div className="flex justify-center items-center h-64 text-emerald-500 font-mono animate-pulse">
+                                CARGANDO SISTEMA...
+                            </div>
+                        ) : (
+                            <>
+                                {view === 'products' && <ProductList />}
+                                {view === 'create' && <CreateProductForm />}
+                                {view === 'cart' && <CartList />}
+                                {view === 'orders' && (
+                                    <div className="p-8 text-center border border-zinc-800 bg-zinc-900 m-8">
+                                        <h2 className="text-xl text-white font-bold mb-2">Orden Procesada</h2>
+                                        <p className="text-zinc-500">Tu pedido ha sido enviado al servidor.</p>
+                                        <p className="text-zinc-600 text-sm mt-4">Puedes verificar la persistencia en <a href="http://localhost:8080/h2-console" target="_blank" className="text-emerald-500 underline">H2 Console</a></p>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+
+        setTimeout(() => lucide.createIcons(), 100);
+    </script>
+</body>
+
+</html>
